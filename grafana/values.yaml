@@ -207,7 +207,7 @@ dashboardProviders:
 dashboards: 
   aws:
     aws-elb-application-load-balancer:
-      file: dashboards/aws/aws-elb-application-load-balancer.json
+      file: dashboards/aws/aws-elb-application-load-balancer_rev8.json
 dashboardsConfigMaps: {}
 grafana.ini:
   paths:
