@@ -1,0 +1,311 @@
+rbac:
+  create: true
+  pspEnabled: true
+  pspUseAppArmor: true
+  namespaced: false
+  extraRoleRules: []
+  extraClusterRoleRules: []
+serviceAccount:
+  create: true
+  name:
+  nameTest:
+  autoMount: true
+replicas: 1
+autoscaling:
+  enabled: false
+podDisruptionBudget: {}
+deploymentStrategy:
+  type: RollingUpdate
+readinessProbe:
+  httpGet:
+    path: /api/health
+    port: 3000
+livenessProbe:
+  httpGet:
+    path: /api/health
+    port: 3000
+  initialDelaySeconds: 60
+  timeoutSeconds: 30
+  failureThreshold: 10
+image:
+  repository: grafana/grafana
+  tag: 9.0.0
+  sha: ""
+  pullPolicy: IfNotPresent
+testFramework:
+  enabled: true
+  image: "bats/bats"
+  tag: "v1.1.0"
+  imagePullPolicy: IfNotPresent
+  securityContext: {}
+securityContext:
+  runAsUser: 472
+  runAsGroup: 472
+  fsGroup: 472
+containerSecurityContext:
+  {}
+extraConfigmapMounts: []
+extraEmptyDirMounts: {}
+extraLabels: {}
+downloadDashboardsImage:
+  repository: curlimages/curl
+  tag: 7.73.0
+  sha: ""
+  pullPolicy: IfNotPresent
+downloadDashboards:
+  env: {}
+  envFromSecret: ""
+  resources: {}
+podPortName: grafana
+service:
+  type: ClusterIP
+  port: 80
+  targetPort: 3000
+  annotations: {}
+  labels: {}
+  portName: service
+serviceMonitor:
+  enabled: false
+  path: /metrics
+  labels: {}
+  interval: 1m
+  scheme: http
+  tlsConfig: {}
+  scrapeTimeout: 30s
+  relabelings: []
+extraExposePorts: []
+hostAliases: []
+ingress:
+  enabled: false
+  annotations: {}
+  labels: {}
+  path: /
+  pathType: Prefix
+  hosts:
+    - chart-example.local
+  extraPaths: []
+  tls: []
+resources: {}
+nodeSelector: {}
+tolerations: []
+affinity: {}
+extraInitContainers: []
+extraContainers: |
+extraContainerVolumes: []
+persistence:
+  type: pvc
+  enabled: true
+  storageClassName: ""
+  accessModes:
+    - ReadWriteOnce
+  size: 10Gi
+  finalizers:
+    - kubernetes.io/pvc-protection
+  inMemory:
+    enabled: false
+initChownData:
+  enabled: true
+  image:
+    repository: busybox
+    tag: "1.31.1"
+    sha: ""
+    pullPolicy: IfNotPresent
+  resources: {}
+adminUser: admin-grafana
+adminPassword: 4Aljsk8VAY3N
+admin:
+  existingSecret: ""
+  userKey: admin-user
+  passwordKey: admin-password
+env: {}
+envValueFrom: {}
+envFromSecret: ""
+envRenderSecret: {}
+extraSecretMounts: []
+extraVolumeMounts: 
+plugins: 
+    - alexanderzobnin-zabbix-app
+    - grafana-clock-panel
+    - agenty-flowcharting-panel
+  # - digrich-bubblechart-panel
+  # - grafana-clock-panel
+datasources:
+  datasources.yaml:
+    apiVersion: 1
+    datasources:
+    - name: Elasticsearch-apimanager
+      type: elasticsearch
+      access: proxy
+      database: "[events-realwave-]YYYYMMDD"
+      url: http://localhost:9200
+      jsonData:
+        interval: Daily
+        timeField: "@timestamp"
+    - name: Prometheus 
+      type: prometheus
+      url: http://localhost
+      access: proxy
+      isDefault: false
+    - name: CloudWatch
+      type: cloudwatch
+      jsonData:
+        authType: keys
+        defaultRegion: sa-east-1
+      secureJsonData:
+        accessKey: 'ljkhghjkfkjghjkhgkjhhg'
+        secretKey: 'kjhgkjhhgkjhgytrdeshggvhgfjhjf'
+    - name: loki
+      type: loki
+      url: http://loki:9800
+      access: proxy
+      isDefault: false
+    - name: banco
+      type: postgres
+      url: localhost:5432
+      database: database
+      user: admin
+      secureJsonData:
+        password: 'admin'
+      jsonData:
+        sslmode: 'disable' # disable/require/verify-ca/verify-full
+        maxOpenConns: 0 # Grafana v5.4+
+        maxIdleConns: 2 # Grafana v5.4+
+        connMaxLifetime: 14400 # Grafana v5.4+
+        postgresVersion: 1000 # 903=9.3, 904=9.4, 905=9.5, 906=9.6, 1000=10
+        timescaledb: false    
+
+notifiers: 
+  notifiers.yaml:
+    notifiers:
+    - name: prometheus-alertmanager
+      type: prometheus-alertmanager 
+      uid: prometheus-alertmanager
+      org_id: 1
+      org_name: Main Org.
+      is_default: true
+      settings:
+        url: http://localhost
+dashboardProviders: 
+  dashboardproviders.yaml:
+    apiVersion: 1
+    providers:
+    - name: 'aws'
+      orgId: 1
+      folder: 'aws'
+      type: file
+      disableDeletion: true
+      options:
+        path: /var/lib/grafana/dashboards/aws
+    - name: 'logs'
+      orgId: 1
+      folder: 'logs'
+      type: file
+      disableDeletion: true
+      options:
+        path: /var/lib/grafana/dashboards/logs
+
+dashboards: 
+  aws:
+    aws-elb-application-load-balancer:
+      file: dashboards/aws/aws-elb-application-load-balancer.json
+dashboardsConfigMaps: {}
+grafana.ini:
+  paths:
+    data: /var/lib/grafana/data
+    logs: /var/log/grafana
+    plugins: /var/lib/grafana/plugins
+    provisioning: /etc/grafana/provisioning
+  analytics:
+    check_for_updates: true
+  log:
+    mode: console
+    level: debug
+  grafana_net:
+    url: https://grafana.net
+  auth.generic_oauth:
+    enabled: true
+    client_id: grafana
+    client_secret: 'dJ3wGVtXZGuP43nuMtH5c6RclwvuY1b1'
+    scopes: openid profile email groups
+    auth_url: http://localhost:8080/auth/realms/master/protocol/openid-connect/auth
+    token_url: http://localhost:8080/auth/realms/master/protocol/openid-connect/token
+    api_url: http://localhost:8080/auth/realms/master/protocol/openid-connect/userinfo
+    role_attribute_path: groups[?contains(@, 'grafana-admin') == `true`] && 'Admin'
+    role_attribute_strict: true
+  auth.ldap:
+    enabled: false
+    allow_sign_up: true
+    config_file: /etc/grafana/ldap.toml
+ldap:
+  enabled: false
+  existingSecret: ""
+  config: ""
+smtp:
+  existingSecret: ""
+  userKey: "user"
+  passwordKey: "password"
+sidecar:
+  image:
+    repository: quay.io/kiwigrid/k8s-sidecar
+    tag: 1.12.2
+    sha: ""
+  imagePullPolicy: IfNotPresent
+  resources: {}
+  enableUniqueFilenames: false
+  dashboards:
+    enabled: false
+    SCProvider: true
+    label: grafana_dashboard
+    labelValue: null
+    folder: /tmp/dashboards
+    defaultFolderName: null
+    searchNamespace: null
+    resource: both
+    folderAnnotation: null
+    provider:
+      name: sidecarProvider
+      orgid: 1
+      folder: ''
+      type: file
+      disableDelete: false
+      allowUiUpdates: false
+      foldersFromFilesStructure: false
+  datasources:
+    enabled: false
+    label: grafana_datasource
+    labelValue: null
+    searchNamespace: null
+    resource: both
+  notifiers:
+    enabled: false
+    label: grafana_notifier
+    searchNamespace: null
+    resource: both
+namespaceOverride: ""
+revisionHistoryLimit: 10
+imageRenderer:
+  enabled: false
+  replicas: 1
+  image:
+    repository: grafana/grafana-image-renderer
+    tag: latest
+    sha: ""
+    pullPolicy: Always
+  env:
+    HTTP_HOST: "0.0.0.0"
+  serviceAccountName: ""
+  securityContext: {}
+  hostAliases: []
+  priorityClassName: ''
+  service:
+    enabled: true
+    portName: 'http'
+    port: 8081
+    targetPort: 8081
+  grafanaSubPath: ""
+  podPortName: http
+  revisionHistoryLimit: 10
+  networkPolicy:
+    limitIngress: true
+    limitEgress: false
+  resources: {}
